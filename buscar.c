@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #define MAX 10000000
 
@@ -67,14 +68,11 @@ void *funcionHilo(void *arg) {
 			fgets(line,MAX,fp);
 			char *rest = line;
 
-			token = strtok_r(rest," ,.!?;:\e\\\?\f\n\t-_",&rest);
-
-			while (token != NULL) {
+			while ((token = strtok_r(rest," ,.!?;:\e\\\?\f\n\t-_",&rest))) {
 				for (int i=0;i<npalabras;i++) {
 					if (strcmp(token,palabras[i])==0)
 						num_palabras[i]++;
 				}
-				token = strtok_r(NULL," ,.!?;:\e\\\?\f\n\t-_",&rest);
 			}
 
 			free(line);
@@ -86,6 +84,20 @@ void *funcionHilo(void *arg) {
 	pthread_mutex_unlock(&mutex);
 
 	return (void *)0;
+}
+
+//Funcion para imprimir por segundo el numero de palabras encontradas
+void * printxSec(void * arg)
+{
+	while(1)
+  	{
+    		pthread_mutex_lock(&mutex);
+    		for(int i = 0; i<npalabras; i++){
+      			printf("%i: %s  aparece %i veces\n",i+1,palabras[i],num_palabras[i]);
+    		}
+		pthread_mutex_unlock(&mutex);
+    		sleep(1);
+  	}
 }
 
 //Main
@@ -117,6 +129,10 @@ int main(int argc, char *argv[]) {
 			linesxth = ceil(linesxth);
 			linesxth++;
 		}
+		
+		//Hilo para imprimir numero de palabras encontradas por segundo 
+		pthread_t idPrintThread;
+		pthread_create(&idPrintThread, NULL, printxSec, NULL);
 
 		int inicio = 0;
 		for (int i=0;i<numOfThreads;i++) {
@@ -130,5 +146,11 @@ int main(int argc, char *argv[]) {
 			pthread_create(&ids[i],NULL,funcionHilo,(void *)structarg);
 			inicio+=linesxth;
 		}
+	
+		//Mostrando conteo final
+		for(int i = 0; i<npalabras; i++){
+			printf("%i: %s  aparece %i veces\n",i+1,palabras[i],num_palabras[i]);
+		}
 	}
+	return 0;
 }
