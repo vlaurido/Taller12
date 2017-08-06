@@ -3,4 +3,4 @@ buscar: buscar.c
 
 .PHONY: clean
 clean:
-rm -rf buscar
+	rm -rf buscar
