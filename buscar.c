@@ -67,12 +67,14 @@ void *funcionHilo(void *arg) {
 
 			fgets(line,MAX,fp);
 			char *rest = line;
+			token = strtok_r(rest," ,.!?;:\e\\\?\f\n\t-_",&rest);
 
-			while ((token = strtok_r(rest," ,.!?;:\e\\\?\f\n\t-_",&rest))) {
+			while (token != NULL) {
 				for (int i=0;i<npalabras;i++) {
 					if (strcmp(token,palabras[i])==0)
 						num_palabras[i]++;
 				}
+				token = strtok_r(NULL," ,.!?;:\e\\\?\f\n\t-_",&rest);
 			}
 
 			free(line);
@@ -146,11 +148,20 @@ int main(int argc, char *argv[]) {
 			pthread_create(&ids[i],NULL,funcionHilo,(void *)structarg);
 			inicio+=linesxth;
 		}
-	
+		
+		//Funciona para guardar el valor que retorna el hilo
+		for (int i = 0; i < numOfThreads; i++)
+		{
+			void *valor_retorno = malloc(sizeof(void *));		
+			pthread_join(ids[i], &valor_retorno);
+		}
+
 		//Mostrando conteo final
 		for(int i = 0; i<npalabras; i++){
 			printf("%i: %s  aparece %i veces\n",i+1,palabras[i],num_palabras[i]);
 		}
+
+		pthread_mutex_destroy(&mutex);
 	}
 	return 0;
 }
