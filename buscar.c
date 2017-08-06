@@ -34,11 +34,6 @@ int numero_lineas(char *ruta, int *tam_lineas) {
 	return -1;
 }
 
-//cuantas lineas va a leer
-//desde donde va a leer
-//la ruta del archivo
-//fseek (cada hilo abre el archivo)
-
 //Declaramos una estructura
 typedef struct mi_estructuraTDA{
 	int lines_to_read;
@@ -48,7 +43,7 @@ typedef struct mi_estructuraTDA{
 
 //Funcion que recibe cada hilo
 void *funcionHilo(void *arg) {
-	pthread_mutex_lock(&mutex);
+	//pthread_mutex_lock(&mutex);
 
 	estructura *argumentos = (estructura *)arg;
 	char *ruta = argumentos->ruta;
@@ -71,8 +66,11 @@ void *funcionHilo(void *arg) {
 
 			while (token != NULL) {
 				for (int i=0;i<npalabras;i++) {
-					if (strcmp(token,palabras[i])==0)
-						num_palabras[i]++;
+					if (strcmp(token,palabras[i])==0){
+						pthread_mutex_lock(&mutex);  
+            					(num_palabras[i])++;
+						pthread_mutex_unlock(&mutex);
+					} 
 				}
 				token = strtok_r(NULL," ,.!?;:\e\\\?\f\n\t-_",&rest);
 			}
@@ -83,7 +81,7 @@ void *funcionHilo(void *arg) {
 	}
 
 	fclose(fp);
-	pthread_mutex_unlock(&mutex);
+	//pthread_mutex_unlock(&mutex);
 
 	return (void *)0;
 }
@@ -94,8 +92,10 @@ void * printxSec(void * arg)
 	while(1)
   	{
     		pthread_mutex_lock(&mutex);
+		printf("\n*Conteo en este momento*\n");
     		for(int i = 0; i<npalabras; i++){
       			printf("%i: %s  aparece %i veces\n",i+1,palabras[i],num_palabras[i]);
+
     		}
 		pthread_mutex_unlock(&mutex);
     		sleep(1);
@@ -131,10 +131,6 @@ int main(int argc, char *argv[]) {
 			linesxth = ceil(linesxth);
 			linesxth++;
 		}
-		
-		//Hilo para imprimir numero de palabras encontradas por segundo 
-		pthread_t idPrintThread;
-		pthread_create(&idPrintThread, NULL, printxSec, NULL);
 
 		int inicio = 0;
 		for (int i=0;i<numOfThreads;i++) {
@@ -149,7 +145,11 @@ int main(int argc, char *argv[]) {
 			inicio+=linesxth;
 		}
 		
-		//Funciona para guardar el valor que retorna el hilo
+		//Hilo para imprimir numero de palabras encontradas por segundo 
+		pthread_t idPrintThread;
+		pthread_create(&idPrintThread, NULL, printxSec, NULL);
+
+		//Funcion para guardar el valor que retorna el hilo
 		for (int i = 0; i < numOfThreads; i++)
 		{
 			void *valor_retorno = malloc(sizeof(void *));		
@@ -157,6 +157,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		//Mostrando conteo final
+		printf("\n*Conteo final*\n");
 		for(int i = 0; i<npalabras; i++){
 			printf("%i: %s  aparece %i veces\n",i+1,palabras[i],num_palabras[i]);
 		}
